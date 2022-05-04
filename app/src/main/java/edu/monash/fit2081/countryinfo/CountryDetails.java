@@ -114,7 +114,7 @@ public class CountryDetails extends AppCompatActivity {
                                 currencies = readCurrencyArray(jsonReader);
                                 countryInfo.setCurrency(currencies);
                             } else if(keyName.equals("languages") && jsonReader.peek() != JsonToken.NULL){
-                                language = readLanguageArray(jsonReader, newReader);
+                                language = readLanguageArray(jsonReader);
                                 countryInfo.setLanguage(language);
                             }else{
                                 jsonReader.skipValue();
@@ -168,24 +168,30 @@ public class CountryDetails extends AppCompatActivity {
         return currencies;
     }
 
-    public List<String> readLanguageArray(JsonReader jsonReader, JsonReader newReader) throws IOException{
+    public List<String> readLanguageArray(JsonReader jsonReader) throws IOException{
         String newName;
         List<String>
                 languages = new ArrayList<String>();
 
         jsonReader.beginArray();
-        while(jsonReader.hasNext()) {
-            newReader.beginObject();
-            while (newReader.hasNext()) {
-                newName = newReader.nextName();
-                if (newName.equals("name")) {
-                    //while(jsonReader.hasNext()){
-                    languages.add(newReader.nextString() + ", ");
-                    newReader.endObject();
+        if(jsonReader.hasNext()) {
+            JsonToken peek = jsonReader.peek();
+            if (peek == JsonToken.NULL) {
+                jsonReader.skipValue();
+            }
 
-                    //}
-                } else {
-                    newReader.skipValue();
+            else{
+                jsonReader.beginObject();
+                while (jsonReader.hasNext()) {
+                    newName = jsonReader.nextName();
+                    if (newName.equals("name")) {
+                        //while(jsonReader.hasNext()){
+                        languages.add(jsonReader.nextString() + ", ");
+                        jsonReader.endObject();
+                        //}
+                    } else
+
+                        jsonReader.skipValue();
                 }
             }
         }
