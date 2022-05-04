@@ -80,6 +80,7 @@ public class CountryDetails extends AppCompatActivity {
 
                     //now use a JSON parser to decode data
                     JsonReader jsonReader = new JsonReader(responseBodyReader);
+                    JsonReader newReader = new JsonReader(responseBodyReader);
                     jsonReader.beginArray(); //consume arrays's opening JSON brace
                     String keyName;
                     String newName;
@@ -89,7 +90,6 @@ public class CountryDetails extends AppCompatActivity {
                         jsonReader.beginObject(); //consume object's opening JSON brace
                         while (jsonReader.hasNext()) {// process key/value pairs inside the current object
                             keyName = jsonReader.nextName();
-                            newName = jsonReader.nextName();
                             if (keyName.equals("name")) {
                                 countryInfo.setName(jsonReader.nextString());
                                 if (countryInfo.getName().equalsIgnoreCase(selectedCountry)) {
@@ -104,18 +104,28 @@ public class CountryDetails extends AppCompatActivity {
                             } else if (keyName.equals("area")) {
                                 countryInfo.setArea(jsonReader.nextDouble());
                             } else if(keyName.equals("currencies")){
-                                if(newName.equals("name")){
-                                countryInfo.setCurrency(jsonReader.nextString());}
-                                else{
-                                    jsonReader.skipValue();
+                                newReader.beginArray(); //consume object's opening JSON brace
+                                while (newReader.hasNext()) {
+                                    newName = newReader.nextName();
+                                    if(newName.equals("name")){
+                                        countryInfo.setCurrency(newReader.nextString());}
+                                    else{
+                                        newReader.skipValue();
+                                    }
                                 }
+                                newReader.endArray();
                             } else if(keyName.equals("languages")){
-                            } else if(keyName.equals("currencies")){
-                                if(newName.equals("name")){
-                                    countryInfo.setCurrency(jsonReader.nextString());}
-                                else{
-                                    jsonReader.skipValue();
+                                newReader.beginArray(); //consume object's opening JSON brace
+                                while (jsonReader.hasNext()) {
+                                    newName = newReader.nextName();
+                                    if(newName.equals("name")){
+                                        countryInfo.setCurrency(newReader.nextString());}
+                                    else{
+                                        newReader.skipValue();
+                                    }
                                 }
+                                newReader.endArray();
+
                             } else {
                                 jsonReader.skipValue();
                             }
