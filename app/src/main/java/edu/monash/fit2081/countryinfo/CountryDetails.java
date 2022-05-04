@@ -10,14 +10,20 @@ import androidx.core.content.ContextCompat;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.JsonReader;
+import android.util.JsonToken;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -81,9 +87,10 @@ public class CountryDetails extends AppCompatActivity {
                     //now use a JSON parser to decode data
                     JsonReader jsonReader = new JsonReader(responseBodyReader);
                     JsonReader newReader = new JsonReader(responseBodyReader);
+                    List<String> currencies = null;
+                    List<String> language = null;
                     jsonReader.beginArray(); //consume arrays's opening JSON brace
                     String keyName;
-                    String newName;
                     // countryInfo = new CountryInfo(); //nested class (see below) to carry Country Data around in
                     boolean countryFound = false;
                     while (jsonReader.hasNext() && !countryFound) { //process array of objects
@@ -103,44 +110,27 @@ public class CountryDetails extends AppCompatActivity {
                                 countryInfo.setPopulation(jsonReader.nextInt());
                             } else if (keyName.equals("area")) {
                                 countryInfo.setArea(jsonReader.nextDouble());
-                            } else if(keyName.equals("currencies")){
-                                newReader.beginArray(); //consume object's opening JSON brace
-                                while (newReader.hasNext()) {
-                                    newName = newReader.nextName();
-                                    if(newName.equals("name")){
-                                        countryInfo.setCurrency(newReader.nextString());}
-                                    else{
-                                        newReader.skipValue();
-                                    }
-                                }
-                                newReader.endArray();
-                            } else if(keyName.equals("languages")){
-                                newReader.beginArray(); //consume object's opening JSON brace
-                                while (jsonReader.hasNext()) {
-                                    newName = newReader.nextName();
-                                    if(newName.equals("name")){
-                                        countryInfo.setCurrency(newReader.nextString());}
-                                    else{
-                                        newReader.skipValue();
-                                    }
-                                }
-                                newReader.endArray();
-
-                            } else {
+                            } else if(keyName.equals("currencies") && jsonReader.peek() != JsonToken.NULL){
+                                currencies = readCurrencyArray(jsonReader);
+                                countryInfo.setCurrency(currencies);
+                            } else if(keyName.equals("languages") && jsonReader.peek() != JsonToken.NULL){
+                                language = readLanguageArray(jsonReader, newReader);
+                                countryInfo.setLanguage(language);
+                            }else{
                                 jsonReader.skipValue();
                             }
                         }
                         jsonReader.endObject();
                     }
-                    jsonReader.endArray();
+                    jsonReader.close();
                     uiHandler.post(()->{
                         name.setText(countryInfo.getName());
                         capital.setText(countryInfo.getCapital());
                         code.setText(countryInfo.getAlpha3Code());
                         population.setText(Integer.toString(countryInfo.getPopulation()));
                         area.setText(Double.toString(countryInfo.getArea()));
-                        languages.setText(countryInfo.getLanguage());
-                        currency.setText(countryInfo.getCurrency());
+                        languages.setText(String.valueOf(countryInfo.getLanguage()));
+                        currency.setText(String.valueOf(countryInfo.getCurrency()));
                     });
 
 
@@ -157,7 +147,53 @@ public class CountryDetails extends AppCompatActivity {
 
 
     }
+    public List<String> readCurrencyArray(JsonReader jsonReader) throws IOException{
+        String newName;
+        List<String>
+        currencies = new ArrayList<String>();
+        jsonReader.beginArray();
+        while(jsonReader.hasNext()) {
+            jsonReader.beginObject();
+            while (jsonReader.hasNext()) {
+                newName = jsonReader.nextName();
+                if (newName.equals("name")) {
+                    currencies.add(jsonReader.nextString());
+                } else {
+                    jsonReader.skipValue();
+                }
+            }
+        }
+        jsonReader.endObject();
+        jsonReader.endArray();
+        return currencies;
+    }
 
+    public List<String> readLanguageArray(JsonReader jsonReader, JsonReader newReader) throws IOException{
+        String newName;
+        List<String>
+                languages = new ArrayList<String>();
+
+        jsonReader.beginArray();
+        while(jsonReader.hasNext()) {
+            newReader.beginObject();
+            while (newReader.hasNext()) {
+                newName = newReader.nextName();
+                if (newName.equals("name")) {
+                    //while(jsonReader.hasNext()){
+                    languages.add(newReader.nextString() + ", ");
+                    newReader.endObject();
+
+                    //}
+                } else {
+                    newReader.skipValue();
+                }
+            }
+        }
+
+        jsonReader.endObject();
+        jsonReader.close();
+        return languages;
+    }
 
     private class CountryInfo {
         private String name;
@@ -165,8 +201,8 @@ public class CountryDetails extends AppCompatActivity {
         private String capital;
         private int population;
         private double area;
-        private String currency;
-        private String language;
+        private List<String> currency;
+        private List<String> language;
 
         public String getName() {
             return name;
@@ -208,15 +244,15 @@ public class CountryDetails extends AppCompatActivity {
             this.area = area;
         }
 
-        public void setCurrency(String currency){this.currency = currency;}
+        public void setCurrency(List<String> currency){this.currency = currency;}
 
-        public String getCurrency(){return currency;}
+        public List<String> getCurrency(){return currency;}
 
-        public void setLanguage(String language){this.language = language;}
+        public void setLanguage(List<String> language){this.language = language;}
         /*public void setLanguage(String[] language){
             for(int size = 0; size < language.length; size++ ){this.language = this.language + language[size] + ", "; } }*/
 
-        public String getLanguage(){return language;}
+        public List<String> getLanguage(){return language;}
     }
 }
 //String[] setLanguage(String[] language){
