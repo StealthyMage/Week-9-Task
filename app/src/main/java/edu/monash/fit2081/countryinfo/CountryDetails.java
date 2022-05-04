@@ -189,12 +189,10 @@ public class CountryDetails extends AppCompatActivity {
                         languages.add(jsonReader.nextString() + ", ");
                         //}
                     } else
-
                         jsonReader.skipValue();
                 }
             }
         }
-
         jsonReader.endObject();
         jsonReader.close();
         return languages;
