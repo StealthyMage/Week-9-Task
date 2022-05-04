@@ -187,7 +187,6 @@ public class CountryDetails extends AppCompatActivity {
                     if (newName.equals("name")) {
                         //while(jsonReader.hasNext()){
                         languages.add(jsonReader.nextString() + ", ");
-                        jsonReader.endObject();
                         //}
                     } else
 
