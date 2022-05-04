@@ -1,5 +1,9 @@
 package edu.monash.fit2081.countryinfo;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -14,6 +18,8 @@ import android.util.JsonToken;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.json.JSONObject;
@@ -21,6 +27,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +47,8 @@ public class CountryDetails extends AppCompatActivity {
     private TextView area;
     private TextView currency;
     private TextView languages;
+    private ImageView image;
+    String countryName;
 
 
     @Override
@@ -60,17 +69,20 @@ public class CountryDetails extends AppCompatActivity {
         area = findViewById(R.id.area);
         currency = findViewById(R.id.currency);
         languages = findViewById(R.id.languages);
+        image = findViewById(R.id.image_view);
 
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         //Executor handler = ContextCompat.getMainExecutor(this);
         Handler uiHandler=new Handler(Looper.getMainLooper());
-
+        Handler handler = new Handler(Looper.getMainLooper());
 
 
         executor.execute(() -> {
             //Background work here
             CountryInfo countryInfo = new CountryInfo();
+
+
 
             try {
                 // Create URL
@@ -86,7 +98,6 @@ public class CountryDetails extends AppCompatActivity {
 
                     //now use a JSON parser to decode data
                     JsonReader jsonReader = new JsonReader(responseBodyReader);
-                    JsonReader newReader = new JsonReader(responseBodyReader);
                     List<String> currencies = null;
                     List<String> language = null;
                     jsonReader.beginArray(); //consume arrays's opening JSON brace
@@ -99,8 +110,16 @@ public class CountryDetails extends AppCompatActivity {
                             keyName = jsonReader.nextName();
                             if (keyName.equals("name")) {
                                 countryInfo.setName(jsonReader.nextString());
+                                String request = "https://countryflagsapi.com/png/" + countryInfo.getName();
+                                java.net.URL url = new java.net.URL(request);
+                                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                                connection.connect();
+                                InputStream input = connection.getInputStream();
+                                Bitmap myBitmap = BitmapFactory.decodeStream(input);
+                                handler.post(() -> {image.setImageBitmap(myBitmap);});
                                 if (countryInfo.getName().equalsIgnoreCase(selectedCountry)) {
                                     countryFound = true;
+                                    countryName = countryInfo.getName();
                                 }
                             } else if (keyName.equals("alpha3Code")) {
                                 countryInfo.setAlpha3Code(jsonReader.nextString());
@@ -147,6 +166,8 @@ public class CountryDetails extends AppCompatActivity {
 
 
     }
+
+
     public List<String> readCurrencyArray(JsonReader jsonReader) throws IOException{
         String newName;
         List<String>
@@ -174,27 +195,21 @@ public class CountryDetails extends AppCompatActivity {
                 languages = new ArrayList<String>();
 
         jsonReader.beginArray();
-        if(jsonReader.hasNext()) {
-            JsonToken peek = jsonReader.peek();
-            if (peek == JsonToken.NULL) {
-                jsonReader.skipValue();
-            }
-
-            else{
+        while(jsonReader.hasNext()) {
                 jsonReader.beginObject();
                 while (jsonReader.hasNext()) {
                     newName = jsonReader.nextName();
                     if (newName.equals("name")) {
                         //while(jsonReader.hasNext()){
-                        languages.add(jsonReader.nextString() + ", ");
+                        languages.add(jsonReader.nextString());
                         //}
                     } else
                         jsonReader.skipValue();
                 }
+            jsonReader.endObject();
             }
-        }
-        jsonReader.endObject();
-        jsonReader.close();
+
+        jsonReader.endArray();
         return languages;
     }
 
@@ -256,6 +271,14 @@ public class CountryDetails extends AppCompatActivity {
             for(int size = 0; size < language.length; size++ ){this.language = this.language + language[size] + ", "; } }*/
 
         public List<String> getLanguage(){return language;}
+    }
+
+    public void handleGetWikiButton(View v){
+        Intent intent = new Intent(this, WebWiki.class);
+        Bundle args = new Bundle();
+        args.putString("COUNTRYNAME", countryName);
+        intent.putExtra("BUNDLE", args);
+        startActivity(intent);
     }
 }
 //String[] setLanguage(String[] language){
