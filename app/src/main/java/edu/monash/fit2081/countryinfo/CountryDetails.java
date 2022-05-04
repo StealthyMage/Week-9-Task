@@ -82,12 +82,14 @@ public class CountryDetails extends AppCompatActivity {
                     JsonReader jsonReader = new JsonReader(responseBodyReader);
                     jsonReader.beginArray(); //consume arrays's opening JSON brace
                     String keyName;
+                    String newName;
                     // countryInfo = new CountryInfo(); //nested class (see below) to carry Country Data around in
                     boolean countryFound = false;
                     while (jsonReader.hasNext() && !countryFound) { //process array of objects
                         jsonReader.beginObject(); //consume object's opening JSON brace
                         while (jsonReader.hasNext()) {// process key/value pairs inside the current object
                             keyName = jsonReader.nextName();
+                            newName = jsonReader.nextName();
                             if (keyName.equals("name")) {
                                 countryInfo.setName(jsonReader.nextString());
                                 if (countryInfo.getName().equalsIgnoreCase(selectedCountry)) {
@@ -102,9 +104,18 @@ public class CountryDetails extends AppCompatActivity {
                             } else if (keyName.equals("area")) {
                                 countryInfo.setArea(jsonReader.nextDouble());
                             } else if(keyName.equals("currencies")){
-                                countryInfo.setCurrency(jsonReader.nextString());
+                                if(newName.equals("name")){
+                                countryInfo.setCurrency(jsonReader.nextString());}
+                                else{
+                                    jsonReader.skipValue();
+                                }
                             } else if(keyName.equals("languages")){
-                                countryInfo.setLanguage(jsonReader.nextString());
+                            } else if(keyName.equals("currencies")){
+                                if(newName.equals("name")){
+                                    countryInfo.setCurrency(jsonReader.nextString());}
+                                else{
+                                    jsonReader.skipValue();
+                                }
                             } else {
                                 jsonReader.skipValue();
                             }
