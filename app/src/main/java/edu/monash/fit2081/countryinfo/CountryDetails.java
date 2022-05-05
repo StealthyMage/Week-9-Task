@@ -49,6 +49,8 @@ public class CountryDetails extends AppCompatActivity {
     private TextView languages;
     private ImageView image;
     String countryName;
+    private TextView borders;
+    private TextView nativeName;
 
 
     @Override
@@ -70,6 +72,8 @@ public class CountryDetails extends AppCompatActivity {
         currency = findViewById(R.id.currency);
         languages = findViewById(R.id.languages);
         image = findViewById(R.id.image_view);
+        borders = findViewById(R.id.borders);
+        nativeName = findViewById(R.id.nativeName);
 
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -100,6 +104,7 @@ public class CountryDetails extends AppCompatActivity {
                     JsonReader jsonReader = new JsonReader(responseBodyReader);
                     List<String> currencies = null;
                     List<String> language = null;
+                    List<String> border = null;
                     jsonReader.beginArray(); //consume arrays's opening JSON brace
                     String keyName;
                     // countryInfo = new CountryInfo(); //nested class (see below) to carry Country Data around in
@@ -135,6 +140,11 @@ public class CountryDetails extends AppCompatActivity {
                             } else if(keyName.equals("languages") && jsonReader.peek() != JsonToken.NULL){
                                 language = readLanguageArray(jsonReader);
                                 countryInfo.setLanguage(language);
+                            }else if(keyName.equals("borders")){
+                                    border = readBordersArray(jsonReader);
+                                    countryInfo.setBorders(border);
+                            }else if(keyName.equals("nativeName")) {
+                                countryInfo.setNativeName(jsonReader.nextString());
                             }else{
                                 jsonReader.skipValue();
                             }
@@ -150,6 +160,8 @@ public class CountryDetails extends AppCompatActivity {
                         area.setText(Double.toString(countryInfo.getArea()));
                         languages.setText(String.valueOf(countryInfo.getLanguage()));
                         currency.setText(String.valueOf(countryInfo.getCurrency()));
+                        borders.setText(String.valueOf(countryInfo.getBorders()));
+                        nativeName.setText(countryInfo.getNativeName());
                     });
 
 
@@ -213,6 +225,20 @@ public class CountryDetails extends AppCompatActivity {
         return languages;
     }
 
+    public List<String> readBordersArray(JsonReader jsonReader) throws IOException{
+        String newName;
+        List<String>
+                languages = new ArrayList<String>();
+
+        jsonReader.beginArray();
+        while(jsonReader.hasNext()) {
+                    languages.add(jsonReader.nextString());
+        }
+
+        jsonReader.endArray();
+        return languages;
+    }
+
     private class CountryInfo {
         private String name;
         private String alpha3Code;
@@ -221,6 +247,8 @@ public class CountryDetails extends AppCompatActivity {
         private double area;
         private List<String> currency;
         private List<String> language;
+        private String nativeName;
+        private List<String> borders;
 
         public String getName() {
             return name;
@@ -271,6 +299,18 @@ public class CountryDetails extends AppCompatActivity {
             for(int size = 0; size < language.length; size++ ){this.language = this.language + language[size] + ", "; } }*/
 
         public List<String> getLanguage(){return language;}
+
+        public void setBorders(List<String> borders){this.borders = borders;}
+
+        public List<String> getBorders(){return borders;}
+
+        public String getNativeName() {
+            return nativeName;
+        }
+
+        public void setNativeName(String nativeName) {
+            this.nativeName = nativeName;
+        }
     }
 
     public void handleGetWikiButton(View v){
